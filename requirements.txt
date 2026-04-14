@@ -12,3 +12,5 @@ trafilatura>=2.0.0
 pypdf
 pydantic>=2.12.5
 pydantic-settings>=2.12.5
+deepeval>=3.9.7
+ragas>=0.4.3
