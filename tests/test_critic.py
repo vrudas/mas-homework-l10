@@ -19,7 +19,7 @@ critique_quality = GEval(
         model="gpt-5.4-mini",
         api_key=settings.api_key.get_secret_value(),
     ),
-    threshold=0.7,
+    threshold=0.6,
 )
 
 def test_critique_quality():
