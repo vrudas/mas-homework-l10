@@ -8,6 +8,7 @@ from pydantic_settings import BaseSettings
 class Settings(BaseSettings):
     api_key: SecretStr
     model_name: str = "gpt-4o-mini"
+    eval_model_name: str = "gpt-5.4-mini"
 
     skip_details: bool = True
 

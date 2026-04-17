@@ -1,34 +1,20 @@
+from deepeval.models import GPTModel
 from deepeval.test_case import ToolCall
-from langchain_classic.agents import AgentExecutor
 from langchain_core.messages import ToolMessage, AIMessage, HumanMessage
 
+from config import settings
 
-def extract_tool_calls_from_agent(
-        agent_executor: AgentExecutor,
-        user_input: str,
-) -> tuple[str, list[ToolCall]]:
+
+def get_eval_model() -> GPTModel:
+    """Central factory for the DeepEval evaluator LLM.
+
+    Keeps the model id in one place (config.settings.eval_model_name) so a
+    single env override reconfigures every metric across every test file.
     """
-    Runs the agent and extracts actual output + tool calls
-    in deepeval's ToolCall format.
-    """
-
-    result = agent_executor.invoke({"input": user_input})
-    final_output = result["output"]
-
-    tool_calls: list[ToolCall] = []
-
-    for action, tool_output in result.get("intermediate_steps", []):
-        tool_calls.append(
-            ToolCall(
-                name=action.tool,
-                input_parameters=action.tool_input
-                if isinstance(action.tool_input, dict)
-                else {"input": action.tool_input},
-                output=str(tool_output),
-            )
-        )
-
-    return final_output, tool_calls
+    return GPTModel(
+        model=settings.eval_model_name,
+        api_key=settings.api_key.get_secret_value(),
+    )
 
 
 def extract_tool_calls_from_runnable(
