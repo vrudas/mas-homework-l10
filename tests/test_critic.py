@@ -1,10 +1,9 @@
 from deepeval.evaluate import assert_test
 from deepeval.metrics import GEval
-from deepeval.models import GPTModel
 from deepeval.test_case import LLMTestCaseParams, LLMTestCase
 
 from agents.critic import critic_agent
-from config import settings
+from tests.testing_utils import get_eval_model
 
 critique_quality = GEval(
     name="Critique Quality",
@@ -15,12 +14,10 @@ critique_quality = GEval(
         "If verdict is REVISE, there must be at least one revision_request",
     ],
     evaluation_params=[LLMTestCaseParams.INPUT, LLMTestCaseParams.ACTUAL_OUTPUT],
-    model=GPTModel(
-        model="gpt-5.4-mini",
-        api_key=settings.api_key.get_secret_value(),
-    ),
+    model=get_eval_model(),
     threshold=0.6,
 )
+
 
 def test_critique_quality():
     test_case_input = """
@@ -62,6 +59,43 @@ def test_critique_quality():
             "The example is concrete and directly matches the customer-support chatbot scenario requested."
         ],
         "gaps":[],
+        "revision_requests":[]
+    }"""
+
+    test_case = LLMTestCase(
+        input=test_case_input,
+        actual_output=agent_output,
+        expected_output=expected_output
+    )
+
+    assert_test(test_case, [critique_quality])
+
+
+def test_critique_revise():
+    test_case_input = """
+    RAG is retrieval augmented generation. It uses retrieval and generation.
+    It has some benefits.
+    """
+
+    agent_output = critic_agent.invoke({
+        "messages": [
+            {"role": "user", "content": test_case_input}
+        ]
+    })["messages"][-1].content
+
+    expected_output = """
+    {
+        "verdict":"REFISE",
+        "is_fresh":false,
+        "is_complete":false,
+        "is_well_structured":false,
+        "strengths":[],
+        "gaps":[
+            "The definition is too vague and doesn't explain what RAG actually does or how it works.",
+            "The purpose of RAG is not explained at all.",
+            "The benefits are mentioned but not specified, and limitations are not mentioned at all.",
+            "The response is very brief and lacks the depth and structure expected for this topic."
+        ],
         "revision_requests":[]
     }"""
 
