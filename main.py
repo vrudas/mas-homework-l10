@@ -1,35 +1,64 @@
 import uuid
 from typing import Any
 
+from langfuse import observe, propagate_attributes
+from langfuse.langchain import CallbackHandler
+from langfuse.langchain.CallbackHandler import LangchainCallbackHandler
 from langgraph.types import Command
 
+from config import settings, langfuse
 from supervisor import supervisor_agent
 
+SESSION_ID = f"homework-12-{uuid.uuid4().hex[:8]}"
 
 def main():
     print("Multi-Agent Research System (type 'exit' to quit)")
     print("-" * 50)
 
+    # Verify connection
+    if langfuse.auth_check():
+        print("Langfuse client is authenticated and ready!")
+    else:
+        print("Authentication failed. Please check your credentials and host.")
+
+    langfuse_handler = CallbackHandler()  # reads LANGFUSE_* env vars
+
     # Create a unique thread ID for this conversation session
     thread_id = str(uuid.uuid4())
-    config = {"configurable": {"thread_id": thread_id}}
+    config = {
+        "configurable": {"thread_id": thread_id},
+        "callbacks": [langfuse_handler],
+        "recursion_limit": 50
+    }
 
-    while True:
-        try:
-            user_input = input("\nYou: ").strip()
-        except (EOFError, KeyboardInterrupt):
-            print("\nGoodbye!")
-            break
+    with propagate_attributes(
+            session_id=SESSION_ID,
+            user_id="student",
+            tags=["multi-agent", "article-writer"],
+            metadata={"homework": "12", "experiment": "baseline_v1"},
+    ):
+        while True:
+            try:
+                user_input = input("\nYou: ").strip()
+            except (EOFError, KeyboardInterrupt):
+                print("\nGoodbye!")
+                break
 
-        if not user_input:
-            continue
+            if not user_input:
+                continue
 
-        if user_input.lower() in ("exit", "quit"):
-            print("Goodbye!")
-            break
+            if user_input.lower() in ("exit", "quit"):
+                print("Goodbye!")
+                break
 
-        stream_agent(supervisor_agent, {"messages": [("user", user_input)]}, config)
-        handle_hitl(supervisor_agent, config)
+            run_mas(config, user_input)
+            langfuse.flush()
+
+
+@observe(name="homework-12")
+def run_mas(config: dict[str, dict[str, str] | list[LangchainCallbackHandler]], user_input: str):
+    stream_agent(supervisor_agent, {"messages": [("user", user_input)]}, config)
+    handle_hitl(supervisor_agent, config)
 
 
 def stream_agent(agent, inputs, config):
