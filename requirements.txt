@@ -14,3 +14,4 @@ pydantic>=2.12.5
 pydantic-settings>=2.12.5
 deepeval>=3.9.7
 ragas>=0.4.3
+langfuse>=4.3.1
