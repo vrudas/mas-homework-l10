@@ -15,7 +15,7 @@ critic_agent = create_agent(
         api_key=settings.api_key,
     ),
     tools=[web_search, read_url, knowledge_search],
-    system_prompt=config.CRITIC_SYSTEM_PROMPT.replace("{today}", date.today().strftime("%B %d, %Y")),
+    system_prompt=config.langfuse.get_prompt("critic_system_prompt", label="production").compile(current_date=date.today().strftime("%B %d, %Y")),
     response_format=CritiqueResult,
     middleware=[
         ModelCallLimitMiddleware(
