@@ -1,6 +1,6 @@
-from datetime import date
 from pathlib import Path
 
+from langfuse import Langfuse
 from pydantic import SecretStr
 from pydantic_settings import BaseSettings
 
@@ -9,6 +9,10 @@ class Settings(BaseSettings):
     api_key: SecretStr
     model_name: str = "gpt-4o-mini"
     eval_model_name: str = "gpt-5.4-mini"
+
+    langfuse_secret_key: SecretStr
+    langfuse_public_key: SecretStr
+    langfuse_base_url: SecretStr
 
     skip_details: bool = True
 
@@ -33,6 +37,13 @@ class Settings(BaseSettings):
 
 
 settings = Settings()
+
+langfuse = Langfuse(
+    public_key=settings.langfuse_public_key.get_secret_value(),
+    secret_key=settings.langfuse_secret_key.get_secret_value(),
+    # base_url="https://cloud.langfuse.com", # 🇪🇺 EU region
+    base_url="https://us.cloud.langfuse.com",  # 🇺🇸 US region
+)
 
 RESEARCH_SYSTEM_PROMPT = """
 # Researcher Agent
